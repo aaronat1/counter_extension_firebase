@@ -1,0 +1,133 @@
+name: firestore-collection-counter
+version: 0.1.0
+specVersion: v1beta
+displayName: Firestore Collection Counter
+description: >-
+  Maintains an accurate real-time document count for Firestore collections.
+  Avoids expensive full-collection reads by keeping an atomic counter updated
+  on every document creation and deletion.
+license: Apache-2.0
+icon: icon.png
+author:
+  authorName: aaronat1
+  authorUrl: https://github.com/aaronat1
+sourceUrl: https://github.com/aaronat1/firestore-collection-counter
+billingRequired: true
+
+roles:
+  - role: datastore.user
+    reason: Required to increment and decrement the counter documents in Firestore.
+
+resources:
+  - name: incrementCounterL1
+    type: firebaseextensions.v1beta.function
+    description: Increments the counter when a top-level document is created.
+    properties:
+      location: ${LOCATION}
+      runtime: nodejs20
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.create
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/{c1}/{d1}
+
+  - name: decrementCounterL1
+    type: firebaseextensions.v1beta.function
+    description: Decrements the counter when a top-level document is deleted.
+    properties:
+      location: ${LOCATION}
+      runtime: nodejs20
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.delete
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/{c1}/{d1}
+
+  - name: incrementCounterL2
+    type: firebaseextensions.v1beta.function
+    description: Increments the counter for depth-2 subcollections.
+    properties:
+      location: ${LOCATION}
+      runtime: nodejs20
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.create
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/{c1}/{d1}/{c2}/{d2}
+
+  - name: decrementCounterL2
+    type: firebaseextensions.v1beta.function
+    description: Decrements the counter for depth-2 subcollections.
+    properties:
+      location: ${LOCATION}
+      runtime: nodejs20
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.delete
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/{c1}/{d1}/{c2}/{d2}
+
+params:
+  - param: LOCATION
+    label: Cloud Functions location
+    description: >-
+      Where do you want to deploy the functions created for this extension?
+    type: select
+    options:
+      - label: Iowa (us-central1)
+        value: us-central1
+      - label: South Carolina (us-east1)
+        value: us-east1
+      - label: Northern Virginia (us-east4)
+        value: us-east4
+      - label: Los Angeles (us-west2)
+        value: us-west2
+      - label: Salt Lake City (us-west3)
+        value: us-west3
+      - label: Las Vegas (us-west4)
+        value: us-west4
+      - label: Belgium (europe-west1)
+        value: europe-west1
+      - label: London (europe-west2)
+        value: europe-west2
+      - label: Frankfurt (europe-west3)
+        value: europe-west3
+      - label: Zurich (europe-west6)
+        value: europe-west6
+      - label: Taiwan (asia-east1)
+        value: asia-east1
+      - label: Hong Kong (asia-east2)
+        value: asia-east2
+      - label: Tokyo (asia-northeast1)
+        value: asia-northeast1
+      - label: Osaka (asia-northeast2)
+        value: asia-northeast2
+      - label: Seoul (asia-northeast3)
+        value: asia-northeast3
+      - label: Mumbai (asia-south1)
+        value: asia-south1
+      - label: Singapore (asia-southeast1)
+        value: asia-southeast1
+      - label: Jakarta (asia-southeast2)
+        value: asia-southeast2
+      - label: Sydney (australia-southeast1)
+        value: australia-southeast1
+    required: true
+    immutable: true
+
+  - param: COUNTER_COLLECTION
+    label: Counter collection name
+    description: >-
+      The Firestore collection where counters are stored.
+      Each counter document has the same ID as the tracked collection.
+    type: string
+    default: _ext_counters
+    required: true
+
+  - param: COUNTER_FIELD
+    label: Counter field name
+    description: >-
+      The field inside each counter document that holds the count integer.
+    type: string
+    default: count
+    required: true
+
+  - param: TRACKED_COLLECTIONS
+    label: Tracked collections (optional)
+    description: >-
+      Comma-separated list of collection names to track.
+      Leave empty to track all collections (except internal _ext_ ones).
+    type: string
+    required: false
